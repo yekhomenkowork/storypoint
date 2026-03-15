@@ -7,9 +7,10 @@
 #include <SD.h>
 #include <SPI.h>
 #include <Wire.h>
+#include <Update.h>
 #include "Adafruit_VL53L0X.h"
 
-// --- НОВІ АУДІО БІБЛІОТЕКИ ---
+// --- АУДІО БІБЛІОТЕКИ ---
 #include "AudioFileSourceSD.h"
 #include "AudioGeneratorMP3.h"
 #include "AudioOutputI2S.h"
@@ -87,7 +88,6 @@ void playAudio(String path) {
 
 void setAudioVolume(int vol) {
   if (out) {
-    // Конвертуємо нашу шкалу 0-21 у шкалу 0.0 - 1.0 для нової бібліотеки
     float gain = (float)vol / 21.0;
     out->SetGain(gain);
   }
@@ -130,7 +130,7 @@ const char setup_html[] PROGMEM = R"rawliteral(
       <div class="form-group"><label>Пароль Wi-Fi</label><input type="password" name="pass"></div>
     </div>
     <div style="font-size:12px; color:#8E8E93; margin:20px 0 10px; text-transform:uppercase; font-weight:bold;">Доступ та Безпека</div>
-    <p style="font-size:13px; color:var(--muted); margin-top:0;">Цей пароль буде використовуватися для входу в веб-інтерфейс, а також <b>стане паролем від Wi-Fi точки StoryPointYK</b>.</p>
+    <p style="font-size:13px; color:var(--muted); margin-top:0;">Цей пароль буде використовуватися для входу в веб-інтерфейс, а також <b>стане паролем від Wi-Fi точки</b>.</p>
     <div class="form-group"><label>Логін</label><input type="text" name="w_user" required value="admin"></div>
     <div class="form-group"><label>Спільний пароль (мінімум 8 символів)</label><input type="password" name="w_pass" required minlength="8" value="admin123"></div>
     <button type="submit">Зберегти та запустити</button>
@@ -183,6 +183,7 @@ const char main_html[] PROGMEM = R"rawliteral(
   
   .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
   .btn-upload { background: var(--success); color: white; display: none; }
+  .btn-ota { background: #5856D6; color: white; display: none; margin-top: 10px; }
   .btn-danger { background: rgba(255,59,48,0.1); color: var(--danger); }
   .btn-warn { background: rgba(255,149,0,0.1); color: var(--warn); }
   
@@ -247,6 +248,16 @@ const char main_html[] PROGMEM = R"rawliteral(
   </div>
 
   <div class="card">
+    <div class="card-title">Оновлення прошивки (OTA)</div>
+    <div class="file-area" id="otaDropZone" style="border-color: #5856D6;">
+      <span class="file-lbl" style="color: #5856D6;">⚙️ Вибрати файл .bin</span>
+      <span class="file-name" id="otaFileNameDisp">Прошивку не вибрано</span>
+      <input type="file" id="otaInput" accept=".bin" onchange="handleOtaSelect()">
+    </div>
+    <button class="btn btn-ota" id="otaBtn" onclick="updateFirmware()">🚀 Прошити пристрій</button>
+  </div>
+
+  <div class="card">
     <div class="card-title" style="color: var(--danger);">Система</div>
     <div class="sys-controls">
       <button class="btn btn-warn" onclick="if(confirm('Перезавантажити пристрій?')) fetch('/reboot', {method:'POST'});">🔄 Рестарт</button>
@@ -273,14 +284,16 @@ const char main_html[] PROGMEM = R"rawliteral(
     let disp = document.getElementById('fileNameDisp');
     let btn = document.getElementById('uploadBtn');
     let area = document.getElementById('dropZone');
-    
-    if(file) {
-      disp.innerText = file.name; disp.style.color = 'var(--primary)';
-      btn.style.display = 'flex'; area.style.borderColor = 'var(--success)';
-    } else {
-      disp.innerText = 'Файл не вибрано'; disp.style.color = 'var(--text)';
-      btn.style.display = 'none'; area.style.borderColor = 'var(--primary)';
-    }
+    if(file) { disp.innerText = file.name; disp.style.color = 'var(--primary)'; btn.style.display = 'flex'; area.style.borderColor = 'var(--success)'; } 
+    else { disp.innerText = 'Файл не вибрано'; disp.style.color = 'var(--text)'; btn.style.display = 'none'; area.style.borderColor = 'var(--primary)'; }
+  }
+
+  function handleOtaSelect() {
+    let file = document.getElementById('otaInput').files[0];
+    let disp = document.getElementById('otaFileNameDisp');
+    let btn = document.getElementById('otaBtn');
+    if(file && file.name.endsWith('.bin')) { disp.innerText = file.name; disp.style.color = '#5856D6'; btn.style.display = 'flex'; } 
+    else { disp.innerText = 'Тільки файли .bin'; disp.style.color = 'var(--danger)'; btn.style.display = 'none'; }
   }
 
   function loadData() {
@@ -296,13 +309,8 @@ const char main_html[] PROGMEM = R"rawliteral(
       tof.style.color = d.tof_ok ? "var(--success)" : "var(--danger)";
       
       let aud = document.getElementById('audioState');
-      if (d.playing) {
-          aud.innerText = "🔊 Відтворюється трек...";
-          aud.style.color = "var(--primary)";
-      } else {
-          aud.innerText = "⏸️ Тиша (Очікування)";
-          aud.style.color = "var(--text)";
-      }
+      if (d.playing) { aud.innerText = "🔊 Відтворюється трек..."; aud.style.color = "var(--primary)"; } 
+      else { aud.innerText = "⏸️ Тиша (Очікування)"; aud.style.color = "var(--text)"; }
 
       let logBox = document.getElementById('logConsole');
       let isScrolledToBottom = logBox.scrollHeight - logBox.clientHeight <= logBox.scrollTop + 1;
@@ -359,6 +367,38 @@ const char main_html[] PROGMEM = R"rawliteral(
       let fd = new FormData(); fd.append("filename", fname);
       fetch('/delete', {method: 'POST', body: fd}).then(()=> { showToast("🗑️ Видалено"); loadData(); });
     }
+  }
+
+  function updateFirmware() {
+    let file = document.getElementById('otaInput').files[0];
+    if(!file) return;
+    let btn = document.getElementById('otaBtn');
+    btn.innerHTML = "⏳ Прошивка: 0%";
+    btn.disabled = true;
+    
+    let fd = new FormData(); fd.append("update", file);
+    let xhr = new XMLHttpRequest();
+    xhr.open('POST', '/update', true);
+    
+    xhr.upload.addEventListener('progress', function(e) {
+      if (e.lengthComputable) {
+        let percent = Math.round((e.loaded / e.total) * 100);
+        btn.innerHTML = "⏳ Прошивка: " + percent + "% (Не вимикати!)";
+      }
+    });
+
+    xhr.onload = function() {
+      if (xhr.status === 200) {
+        btn.innerHTML = "✅ Успіх! Перезавантаження...";
+        showToast("✅ Прошивка оновлена. Перезавантаження...");
+        setTimeout(() => location.reload(), 8000);
+      } else {
+        btn.innerHTML = "🚀 Прошити пристрій";
+        btn.disabled = false;
+        showToast("❌ Помилка оновлення!");
+      }
+    };
+    xhr.send(fd);
   }
 
   loadData(); setInterval(loadData, 2000); 
@@ -557,6 +597,39 @@ void setup() {
       req->send(200);
     });
 
+    // --- ОБРОБНИК OTA ОНОВЛЕННЯ ПРОШИВКИ ---
+    server.on("/update", HTTP_POST, [](AsyncWebServerRequest *req){
+      if(!req->authenticate(webUser.c_str(), webPass.c_str())) return req->send(401);
+      bool error = Update.hasError();
+      if (error) {
+        req->send(500, "text/plain", "Update Failed");
+      } else {
+        req->send(200, "text/plain", "Update Success. Rebooting...");
+        delay(1000);
+        ESP.restart();
+      }
+    }, [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+      if(!request->authenticate(webUser.c_str(), webPass.c_str())) return;
+      if (!index) {
+        addLog("Початок OTA оновлення...");
+        if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000)) {
+          Update.printError(Serial);
+        }
+      }
+      if (!Update.hasError()) {
+        if (Update.write(data, len) != len) {
+          Update.printError(Serial);
+        }
+      }
+      if (final) {
+        if (Update.end(true)) {
+          addLog("OTA оновлення успішне. Перезавантаження...");
+        } else {
+          Update.printError(Serial);
+        }
+      }
+    });
+
     server.on("/reboot", HTTP_POST, [](AsyncWebServerRequest *req){
       if(!req->authenticate(webUser.c_str(), webPass.c_str())) return req->send(401);
       req->send(200);
@@ -604,7 +677,6 @@ void loop() {
     if (measure.RangeStatus != 4) {
       if (measure.RangeMilliMeter < triggerDistance) {
         
-        // Перевіряємо, чи ЗАРАЗ НЕ грає музика
         bool isPlaying = (mp3 && mp3->isRunning());
         
         if (!isPlaying && fileCache.size() > 0) {
