@@ -190,7 +190,7 @@ const char setup_html[] PROGMEM = R"rawliteral(
       <span class="link-btn" onclick="toggleAdv()">Розширені налаштування мережі ▼</span>
       <div id="adv-fields" style="display:none; margin-top: 15px; padding: 15px; background: #0B0E14; border: 1px solid var(--border); border-radius: 8px;">
         <div class="form-group"><label>mDNS Ім'я</label><input type="text" name="mdns" value="storypointyk"></div>
-        <label style="display:flex; align-items:center; gap:10px; color:white; cursor:pointer;">
+        <label style="display:flex; align-items:center; gap:10px; color:white; cursor:pointer; text-transform:none;">
           <input type="checkbox" name="use_static" onchange="document.getElementById('static-box').style.display = this.checked ? 'block' : 'none'" style="width:auto; margin:0;">
           Статичний IP
         </label>
@@ -231,28 +231,34 @@ const char main_html[] PROGMEM = R"rawliteral(
     --primary: #3B82F6; --primary-hover: #2563EB; --success: #10B981; --danger: #EF4444; --warning: #F59E0B;
     --sidebar: #06080A;
   }
+  * { box-sizing: border-box; }
   body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
-  .sidebar { width: 250px; background: var(--sidebar); border-right: 1px solid var(--border); padding: 25px 20px; display: flex; flex-direction: column; z-index: 10; }
+  .overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 40; }
+  
+  .sidebar { width: 250px; background: var(--sidebar); border-right: 1px solid var(--border); padding: 25px 20px; display: flex; flex-direction: column; z-index: 50; transition: transform 0.3s ease; }
   .logo { font-size: 20px; font-weight: 800; color: white; margin-bottom: 35px; display: flex; align-items: center; gap: 10px; letter-spacing: 0.5px; }
   .profile { padding: 15px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 30px; }
-  .profile-name { font-size: 14px; font-weight: 600; color: var(--primary); }
+  .profile-name { font-size: 14px; font-weight: 600; color: var(--primary); word-break: break-all;}
   .profile-role { font-size: 10px; color: var(--muted); letter-spacing: 1px; margin-top: 4px; text-transform: uppercase; }
   .nav { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
   .nav-item { padding: 12px 15px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--muted); transition: 0.2s; display: flex; align-items: center; gap: 10px; border: 1px solid transparent; }
   .nav-item:hover { background: rgba(255,255,255,0.03); color: white; }
   .nav-item.active { background: rgba(59, 130, 246, 0.1); color: var(--primary); border-color: var(--primary); }
 
-  .main-content { flex: 1; padding: 30px 40px; overflow-y: auto; }
-  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+  .main-content { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;}
+  
+  .header-left { display: flex; align-items: center; gap: 15px; }
+  .hamburger { display: none; background: transparent; border: none; color: white; font-size: 26px; cursor: pointer; padding: 0; }
   .header h1 { font-size: 26px; margin: 0; color: white; font-weight: 700; }
   .header .subtitle { font-size: 13px; color: var(--muted); margin-top: 5px; font-family: monospace; }
   
-  .tab-pane { display: none; animation: fadeIn 0.3s; }
+  .tab-pane { display: none; animation: fadeIn 0.3s; flex: 1; }
   .tab-pane.active { display: block; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -266,18 +272,18 @@ const char main_html[] PROGMEM = R"rawliteral(
   .stat-sub { font-size: 12px; color: var(--muted); margin-top: 5px; }
 
   .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 25px; margin-bottom: 20px; }
-  .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
+  .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap:10px;}
   .panel-title { font-size: 14px; font-weight: 700; color: white; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
   
-  .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); flex-wrap: wrap; gap:10px;}
   .list-item:last-child { border-bottom: none; }
-  .list-name { font-size: 14px; font-weight: 600; color: white; margin-bottom: 4px; }
+  .list-name { font-size: 14px; font-weight: 600; color: white; margin-bottom: 4px; word-break: break-all;}
   .list-meta { font-size: 11px; color: var(--muted); }
   
   label { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 8px; display: block; text-transform: uppercase; }
   input[type="text"], input[type="number"], input[type="password"], input[type="time"], select { 
     width: 100%; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; 
-    color: white; font-size: 14px; box-sizing: border-box; outline: none; margin-bottom: 15px;
+    color: white; font-size: 14px; outline: none; margin-bottom: 15px;
   }
   input:focus, select:focus { border-color: var(--primary); }
   
@@ -314,10 +320,23 @@ const char main_html[] PROGMEM = R"rawliteral(
   #toast { position: fixed; bottom: -50px; left: 50%; transform: translateX(-50%); background: var(--success); color: white; padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: 600; transition: 0.3s; z-index: 1000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
   #toast.show { bottom: 30px; }
   #toast.error { background: var(--danger); }
+
+  .grid-2col { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+
+  @media (max-width: 900px) {
+    .hamburger { display: block; }
+    .sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
+    .overlay.show { display: block; }
+    .main-content { padding: 20px; }
+    .header h1 { font-size: 20px; }
+  }
 </style>
 </head><body>
 
-<aside class="sidebar">
+<div class="overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
   <div class="logo">StoryPointYK</div>
   <div class="profile">
     <div class="profile-name" id="wifiName">StoryPointYK Node</div>
@@ -335,9 +354,12 @@ const char main_html[] PROGMEM = R"rawliteral(
 
 <main class="main-content">
   <header class="header">
-    <div>
-      <h1 id="pageTitle">Статус системи</h1>
-      <div class="subtitle" id="networkInfo">IP: -- | mDNS: --.local</div>
+    <div class="header-left">
+      <button class="hamburger" onclick="toggleSidebar()">☰</button>
+      <div>
+        <h1 id="pageTitle">Статус системи</h1>
+        <div class="subtitle" id="networkInfo">IP: -- | mDNS: --.local</div>
+      </div>
     </div>
     <div class="top-actions">
       <button class="btn btn-success" id="armBtn" onclick="toggleArm()">Запустити систему</button>
@@ -391,7 +413,7 @@ const char main_html[] PROGMEM = R"rawliteral(
         <button class="btn btn-primary" onclick="saveSettings()">Зберегти конфіг</button>
       </div>
       
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+      <div class="grid-2col">
         <div>
           <label>Алгоритм спрацювання (Трек):</label>
           <select id="trackSelect" onchange="saveSettings()">
@@ -425,33 +447,10 @@ const char main_html[] PROGMEM = R"rawliteral(
   </div>
 
   <div id="tab-system" class="tab-pane">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <div class="grid-2col">
       
-      <div class="panel" style="border-top: 3px solid var(--warning);">
-        <div class="panel-header" style="margin-bottom:10px; padding-bottom:10px;"><div class="panel-title" style="color:var(--warning);">ІНЦИДЕНТИ (ЛОГИ)</div></div>
-        <div class="log-console" id="logConsole">System boot...</div>
-      </div>
-
-      <div>
-        <div class="panel">
-          <div class="panel-header"><div class="panel-title">БЕЗПЕКА ТА ДОСТУП</div></div>
-          <label>Новий Логін Адміна:</label>
-          <input type="text" id="newWebUser" placeholder="admin">
-          <label>Новий Пароль (мін 8 символів):</label>
-          <input type="password" id="newWebPass" placeholder="********">
-          <button class="btn btn-primary btn-block" onclick="changeAuth()">Оновити дані доступу</button>
-        </div>
-
-        <div class="panel">
-          <div class="panel-header"><div class="panel-title">ПЛАНУВАЛЬНИК ТА ЧАС</div></div>
-          <div style="display:flex; gap:10px; margin-bottom: 15px;">
-            <input type="time" id="manualTime" style="margin:0;">
-            <button class="btn btn-outline" onclick="setDeviceTime()">Set</button>
-          </div>
-          <button class="btn btn-outline btn-block" onclick="syncBrowserTime()">Синхронізувати з ПК</button>
-        </div>
-
-        <div class="panel" style="border-top: 3px solid var(--primary);">
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="panel" style="border-top: 3px solid var(--primary); margin:0;">
           <div class="panel-header"><div class="panel-title">ПІДКЛЮЧЕННЯ WI-FI</div></div>
           
           <label>SSID (Назва мережі):</label>
@@ -460,7 +459,7 @@ const char main_html[] PROGMEM = R"rawliteral(
               <input type="text" id="wifiSSID" autocomplete="off" placeholder="Назва мережі" style="margin:0; width: 100%;">
               <div id="custom-wifi-list" class="custom-select-list"></div>
             </div>
-            <button class="btn btn-outline" style="width: auto; margin:0; padding: 0 15px;" onclick="scanWifi()" id="scanBtn">Scan</button>
+            <button class="btn btn-outline" style="width: auto; margin:0; padding: 0 15px;" onclick="scanWifi()" id="scanBtn">Сканувати</button>
           </div>
           
           <label>Пароль:</label>
@@ -486,7 +485,32 @@ const char main_html[] PROGMEM = R"rawliteral(
           <button class="btn btn-primary btn-block" onclick="saveWifi()">Підключитись (Рестарт)</button>
         </div>
 
-        <div class="panel" style="border-top: 3px solid var(--danger);">
+        <div class="panel" style="margin:0;">
+          <div class="panel-header"><div class="panel-title">ПЛАНУВАЛЬНИК ТА ЧАС</div></div>
+          <div style="display:flex; gap:10px; margin-bottom: 15px;">
+            <input type="time" id="manualTime" style="margin:0;">
+            <button class="btn btn-outline" onclick="setDeviceTime()">Встановити</button>
+          </div>
+          <button class="btn btn-outline btn-block" onclick="syncBrowserTime()">Синхронізувати з ПК</button>
+        </div>
+
+        <div class="panel" style="margin:0;">
+          <div class="panel-header"><div class="panel-title">БЕЗПЕКА ТА ДОСТУП</div></div>
+          <label>Новий Логін Адміна:</label>
+          <input type="text" id="newWebUser" placeholder="admin">
+          <label>Новий Пароль (мін 8 символів):</label>
+          <input type="password" id="newWebPass" placeholder="********">
+          <button class="btn btn-primary btn-block" onclick="changeAuth()">Оновити дані доступу</button>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="panel" style="border-top: 3px solid var(--warning); margin:0; flex:1;">
+          <div class="panel-header" style="margin-bottom:10px; padding-bottom:10px;"><div class="panel-title" style="color:var(--warning);">ІНЦИДЕНТИ (ЛОГИ)</div></div>
+          <div class="log-console" id="logConsole" style="height: 100%; min-height: 300px;">System boot...</div>
+        </div>
+
+        <div class="panel" style="border-top: 3px solid var(--danger); margin:0;">
           <div class="panel-header">
             <div class="panel-title">SYSTEM OTA UPDATE</div>
             <span style="font-size: 11px; color: var(--muted);">Версія: <span id="fwVersion">--</span></span>
@@ -507,6 +531,13 @@ const char main_html[] PROGMEM = R"rawliteral(
 <div id="toast">Повідомлення</div>
 
 <script>
+  function toggleSidebar() {
+    let sidebar = document.getElementById('sidebar');
+    let overlay = document.getElementById('mobileOverlay');
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+  }
+
   function showToast(msg, isErr=false) {
     let t = document.getElementById("toast"); t.innerText = msg; 
     t.className = isErr ? "show error" : "show";
@@ -524,7 +555,12 @@ const char main_html[] PROGMEM = R"rawliteral(
     document.getElementById(tabId).classList.add('active');
     elem.classList.add('active');
     let titles = {'tab-dashboard': 'Статус системи', 'tab-audio': 'Управління аудіо', 'tab-system': 'Системні налаштування'};
-    document.getElementById('pageTitle').innerText = titles[tabId];
+    let pt = document.getElementById('pageTitle');
+    if (pt) pt.innerText = titles[tabId];
+    
+    if(window.innerWidth <= 900) {
+       toggleSidebar();
+    }
   }
 
   function handleFileSelect() {
@@ -544,81 +580,86 @@ const char main_html[] PROGMEM = R"rawliteral(
   }
 
   function loadData() {
-    fetch('/api/data').then(r=>r.json()).then(d=>{
-      document.getElementById('uptime').innerText = formatTime(d.up);
-      document.getElementById('devTime').innerText = "Системний час: " + d.time;
-      document.getElementById('wifiName').innerText = d.ssid !== "" ? d.ssid : "Autonomous AP";
-      document.getElementById('fwVersion').innerText = d.version;
-      document.getElementById('networkInfo').innerText = "IP: " + d.ip + " | mDNS: " + d.mdns + ".local";
+    // ВАЖЛИВО: Кеш-бастер для Safari
+    fetch('/api/data?_=' + new Date().getTime())
+    .then(r=>r.json())
+    .then(d=>{
+      let ut = document.getElementById('uptime'); if(ut) ut.innerText = formatTime(d.up);
+      let dt = document.getElementById('devTime'); if(dt) dt.innerText = "Системний час: " + d.time;
+      let wn = document.getElementById('wifiName'); if(wn) wn.innerText = d.ssid !== "" ? d.ssid : "Autonomous AP";
+      let fw = document.getElementById('fwVersion'); if(fw) fw.innerText = d.version;
+      let ni = document.getElementById('networkInfo'); if(ni) ni.innerText = "IP: " + d.ip + " | mDNS: " + d.mdns + ".local";
       
       let sd = document.getElementById('sdState');
-      sd.innerText = d.sd_ok ? "ONLINE" : "OFFLINE";
-      sd.style.color = d.sd_ok ? "white" : "var(--danger)";
-      document.getElementById('sdSize').innerText = d.sd_u + " / " + d.sd_t + " MB";
+      if(sd) { sd.innerText = d.sd_ok ? "ONLINE" : "OFFLINE"; sd.style.color = d.sd_ok ? "white" : "var(--danger)"; }
+      let sz = document.getElementById('sdSize'); if(sz) sz.innerText = d.sd_u + " / " + d.sd_t + " MB";
       
       let tof = document.getElementById('tofState');
-      tof.innerText = d.tof_ok ? "RUNNING" : "ERROR";
-      tof.style.color = d.tof_ok ? "white" : "var(--danger)";
+      if(tof) { tof.innerText = d.tof_ok ? "RUNNING" : "ERROR"; tof.style.color = d.tof_ok ? "white" : "var(--danger)"; }
       
       let aud = document.getElementById('audioState');
-      aud.innerText = d.playing ? "Відтворюється..." : "Очікування";
-      aud.style.color = d.playing ? "var(--success)" : "var(--muted)";
+      if(aud) { aud.innerText = d.playing ? "Відтворюється..." : "Очікування"; aud.style.color = d.playing ? "var(--success)" : "var(--muted)"; }
 
       let armBtn = document.getElementById('armBtn');
-      if (d.armed) {
-        armBtn.innerHTML = "Зупинити систему (Disarm)";
-        armBtn.className = "btn btn-danger";
-      } else {
-        armBtn.innerHTML = "Запустити систему (Arm)";
-        armBtn.className = "btn btn-success";
+      if (armBtn) {
+        if (d.armed) {
+          armBtn.innerHTML = "Зупинити систему (Disarm)";
+          armBtn.className = "btn btn-danger";
+        } else {
+          armBtn.innerHTML = "Запустити систему (Arm)";
+          armBtn.className = "btn btn-success";
+        }
       }
 
       let logBox = document.getElementById('logConsole');
-      let isScrolledToBottom = logBox.scrollHeight - logBox.clientHeight <= logBox.scrollTop + 1;
-      logBox.innerHTML = d.logs.join("<br>");
-      if(isScrolledToBottom) logBox.scrollTop = logBox.scrollHeight;
+      if(logBox) {
+        let isScrolledToBottom = logBox.scrollHeight - logBox.clientHeight <= logBox.scrollTop + 1;
+        logBox.innerHTML = d.logs.join("<br>");
+        if(isScrolledToBottom) logBox.scrollTop = logBox.scrollHeight;
+      }
       
-      let v = document.getElementById('volume'); if(document.activeElement !== v) { v.value = d.vol; document.getElementById('volVal').innerText = d.vol; }
-      let dist = document.getElementById('distance'); if(document.activeElement !== dist) { dist.value = Math.round(d.dist / 10); document.getElementById('distVal').innerText = Math.round(d.dist / 10); }
-      let sH = document.getElementById('startH'); if(document.activeElement !== sH) sH.value = d.sh;
-      let eH = document.getElementById('endH'); if(document.activeElement !== eH) eH.value = d.eh;
+      let v = document.getElementById('volume'); if(v && document.activeElement !== v) { v.value = d.vol; let vv = document.getElementById('volVal'); if(vv) vv.innerText = d.vol; }
+      let dist = document.getElementById('distance'); if(dist && document.activeElement !== dist) { dist.value = Math.round(d.dist / 10); let dv = document.getElementById('distVal'); if(dv) dv.innerText = Math.round(d.dist / 10); }
+      let sH = document.getElementById('startH'); if(sH && document.activeElement !== sH) sH.value = d.sh;
+      let eH = document.getElementById('endH'); if(eH && document.activeElement !== eH) eH.value = d.eh;
 
-      // Оновлення полів Wi-Fi налаштувань
-      if(document.activeElement !== document.getElementById('wifiMDNS')) document.getElementById('wifiMDNS').value = d.mdns;
-      if(document.activeElement !== document.getElementById('wifiIP')) document.getElementById('wifiIP').value = d.static_ip;
-      if(document.activeElement !== document.getElementById('wifiGW')) document.getElementById('wifiGW').value = d.static_gw;
-      if(document.activeElement !== document.getElementById('wifiSN')) document.getElementById('wifiSN').value = d.static_sn;
-      if(document.activeElement !== document.getElementById('wifiDNS')) document.getElementById('wifiDNS').value = d.static_dns;
+      let wm = document.getElementById('wifiMDNS'); if(wm && document.activeElement !== wm) wm.value = d.mdns;
+      let wip = document.getElementById('wifiIP'); if(wip && document.activeElement !== wip) wip.value = d.static_ip;
+      let wgw = document.getElementById('wifiGW'); if(wgw && document.activeElement !== wgw) wgw.value = d.static_gw;
+      let wsn = document.getElementById('wifiSN'); if(wsn && document.activeElement !== wsn) wsn.value = d.static_sn;
+      let wdns = document.getElementById('wifiDNS'); if(wdns && document.activeElement !== wdns) wdns.value = d.static_dns;
       
       let tgl = document.getElementById('wifiStaticToggle');
-      if(document.activeElement !== tgl) {
+      if(tgl && document.activeElement !== tgl) {
          tgl.checked = d.use_static;
-         document.getElementById('staticConfig').style.display = d.use_static ? 'block' : 'none';
+         let sc = document.getElementById('staticConfig');
+         if(sc) sc.style.display = d.use_static ? 'block' : 'none';
       }
 
       let sel = document.getElementById('trackSelect');
       let optGroup = document.getElementById('fileOptions');
-      optGroup.innerHTML = '';
       let listCont = document.getElementById('filesListContainer');
-      listCont.innerHTML = '';
+      
+      if(optGroup && listCont) {
+        optGroup.innerHTML = '';
+        listCont.innerHTML = '';
 
-      if(d.files.length === 0) listCont.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted); font-size:13px;">Сховище порожнє</div>';
+        if(d.files.length === 0) listCont.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted); font-size:13px;">Сховище порожнє</div>';
 
-      d.files.forEach(f => {
-        let opt = document.createElement('option'); opt.value = f.name; opt.innerHTML = f.name; optGroup.appendChild(opt);
-        let sizeMB = (f.size / (1024 * 1024)).toFixed(2);
+        d.files.forEach(f => {
+          let opt = document.createElement('option'); opt.value = f.name; opt.innerHTML = f.name; optGroup.appendChild(opt);
+          let sizeMB = (f.size / (1024 * 1024)).toFixed(2);
 
-        let item = document.createElement('div'); item.className = 'list-item';
-        item.innerHTML = `
-          <div><div class="list-name">${f.name}</div><div class="list-meta">Розмір: ${sizeMB} MB</div></div>
-          <div style="display:flex; align-items:center; gap:15px;">
-            <button class="btn btn-danger" style="padding:6px 12px; font-size:11px;" onclick="deleteFile('${f.name}')">Видалити</button>
-          </div>
-        `;
-        listCont.appendChild(item);
-      });
-      if(d.track) sel.value = d.track;
-    });
+          let item = document.createElement('div'); item.className = 'list-item';
+          item.innerHTML = `
+            <div><div class="list-name">${f.name}</div><div class="list-meta">Розмір: ${sizeMB} MB</div></div>
+            <div><button class="btn btn-danger" style="padding:6px 12px; font-size:11px;" onclick="deleteFile('${f.name}')">Видалити</button></div>
+          `;
+          listCont.appendChild(item);
+        });
+        if(sel && d.track) sel.value = d.track;
+      }
+    }).catch(err => console.log("Fetch error"));
   }
 
   function setDeviceTime() {
@@ -631,7 +672,8 @@ const char main_html[] PROGMEM = R"rawliteral(
   function syncBrowserTime() {
     let d = new Date();
     let tVal = String(d.getHours()).padStart(2, '0') + ":" + String(d.getMinutes()).padStart(2, '0');
-    document.getElementById('manualTime').value = tVal;
+    let mt = document.getElementById('manualTime');
+    if(mt) mt.value = tVal;
     setDeviceTime();
   }
 
@@ -657,8 +699,8 @@ const char main_html[] PROGMEM = R"rawliteral(
 
   function scanWifi() {
     let btn = document.getElementById('scanBtn');
-    btn.innerHTML = "Scanning..."; btn.disabled = true;
-    fetch('/api/scan').then(r=>r.json()).then(d=>{
+    btn.innerHTML = "Очікування..."; btn.disabled = true;
+    fetch('/api/scan?_=' + new Date().getTime()).then(r=>r.json()).then(d=>{
       if(d.status === "scanning") {
         setTimeout(scanWifi, 2000);
       } else {
@@ -680,10 +722,10 @@ const char main_html[] PROGMEM = R"rawliteral(
           });
         }
         dl.style.display = 'block';
-        btn.innerHTML = "Scan"; btn.disabled = false;
+        btn.innerHTML = "Сканувати"; btn.disabled = false;
         showToast("Мережі знайдено");
       }
-    }).catch(()=>{ btn.innerHTML = "Scan"; btn.disabled = false; });
+    }).catch(()=>{ btn.innerHTML = "Сканувати"; btn.disabled = false; });
   }
 
   document.addEventListener('click', function(e) {
@@ -695,10 +737,13 @@ const char main_html[] PROGMEM = R"rawliteral(
     }
   });
 
-  document.getElementById('wifiSSID').addEventListener('click', function() {
-     let list = document.getElementById('custom-wifi-list');
-     if(list && list.innerHTML !== '') list.style.display = 'block';
-  });
+  let wsInput = document.getElementById('wifiSSID');
+  if(wsInput) {
+    wsInput.addEventListener('click', function() {
+       let list = document.getElementById('custom-wifi-list');
+       if(list && list.innerHTML !== '') list.style.display = 'block';
+    });
+  }
 
   function saveWifi() {
     let s = document.getElementById('wifiSSID').value;
@@ -738,14 +783,16 @@ const char main_html[] PROGMEM = R"rawliteral(
   }
 
   function uploadFile() {
-    let file = document.getElementById('fileInput').files[0];
+    let fileInput = document.getElementById('fileInput');
+    if(!fileInput) return;
+    let file = fileInput.files[0];
     if(!file) return;
     let btn = document.getElementById('uploadBtn');
-    btn.innerHTML = "Deploying..."; btn.style.opacity = "0.7"; btn.disabled = true;
+    btn.innerHTML = "Завантаження..."; btn.style.opacity = "0.7"; btn.disabled = true;
     let fd = new FormData(); fd.append("file", file);
     fetch('/upload', {method: 'POST', body: fd}).then(()=> { 
       showToast("Файл успішно розгорнуто"); 
-      document.getElementById('fileInput').value = "";
+      fileInput.value = "";
       btn.innerHTML = "Завантажити в систему"; btn.style.opacity = "1"; btn.disabled = false;
       handleFileSelect(); loadData(); 
     }).catch(()=> { showToast("Помилка завантаження", true); btn.innerHTML = "Завантажити в систему"; btn.disabled = false; btn.style.opacity = "1"; });
@@ -759,13 +806,15 @@ const char main_html[] PROGMEM = R"rawliteral(
   }
 
   function updateFirmware() {
-    let file = document.getElementById('otaInput').files[0];
+    let fileInput = document.getElementById('otaInput');
+    if(!fileInput) return;
+    let file = fileInput.files[0];
     let pass = document.getElementById('otaPass').value;
     if(!file) return;
     if(!pass) { showToast("Потрібна авторизація (Root Password)", true); return; }
     
     let btn = document.getElementById('otaBtn');
-    btn.innerHTML = "FLASHING: 0%"; btn.disabled = true;
+    btn.innerHTML = "Очікування: 0%"; btn.disabled = true;
     
     let fd = new FormData(); fd.append("update", file);
     let xhr = new XMLHttpRequest();
@@ -774,18 +823,18 @@ const char main_html[] PROGMEM = R"rawliteral(
     xhr.upload.addEventListener('progress', function(e) {
       if (e.lengthComputable) {
         let percent = Math.round((e.loaded / e.total) * 100);
-        btn.innerHTML = "FLASHING: " + percent + "% (DO NOT UNPLUG)";
+        btn.innerHTML = "Очікування: " + percent + "% (Не вимикати!)";
       }
     });
 
     xhr.onload = function() {
       if (xhr.status === 200) {
-        btn.innerHTML = "SUCCESS! Rebooting...";
+        btn.innerHTML = "Успіх! Перезавантаження...";
         showToast("Прошивку оновлено. Система перезавантажується...");
         setTimeout(() => location.reload(), 8000);
       } else {
         btn.innerHTML = "Ініціалізувати прошивку"; btn.disabled = false;
-        showToast("Access Denied або помилка файлу", true);
+        showToast("Помилка доступу або файлу", true);
       }
     };
     xhr.send(fd);
@@ -960,7 +1009,11 @@ void setup() {
 
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *req){
       if(!req->authenticate(webUser.c_str(), webPass.c_str())) return req->requestAuthentication();
-      req->send_P(200, "text/html", main_html);
+      AsyncWebServerResponse *response = req->beginResponse_P(200, "text/html", main_html);
+      response->addHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      response->addHeader("Pragma", "no-cache");
+      response->addHeader("Expires", "-1");
+      req->send(response);
     });
 
     server.on("/api/data", HTTP_GET, [](AsyncWebServerRequest *req){
@@ -1003,7 +1056,10 @@ void setup() {
         if (i < fileCache.size() - 1) json += ",";
       }
       json += "]}";
-      req->send(200, "application/json", json);
+      
+      AsyncWebServerResponse *response = req->beginResponse(200, "application/json", json);
+      response->addHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      req->send(response);
     });
 
     server.on("/api/settings", HTTP_POST, [](AsyncWebServerRequest *req){
@@ -1084,7 +1140,9 @@ void setup() {
         }
         json += "]}";
         WiFi.scanDelete();
-        req->send(200, "application/json", json);
+        AsyncWebServerResponse *response = req->beginResponse(200, "application/json", json);
+        response->addHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        req->send(response);
       }
     });
 
@@ -1230,22 +1288,34 @@ void loop() {
   } else { buttonActive = false; }
 
   static unsigned long lastTof = 0;
-  if (isConfigured && tof_ok && millis() - lastTof > 200) {
+  static int validReadings = 0;
+
+  if (isConfigured && tof_ok && millis() - lastTof > 100) { 
     lastTof = millis();
     VL53L0X_RangingMeasurementData_t measure;
     lox.rangingTest(&measure, false);
 
     if (measure.RangeStatus != 4 && systemArmed) {
-      if (measure.RangeMilliMeter < triggerDistance) {
-        bool isPlaying = (mp3 && mp3->isRunning());
+      
+      if (measure.RangeMilliMeter >= 30 && measure.RangeMilliMeter < triggerDistance) {
+        validReadings++;
         
-        if (!isPlaying && fileCache.size() > 0) {
-          if (isTimeActive()) {
-            addLog("Датчик: " + String(measure.RangeMilliMeter / 10) + " см");
-            triggerPlaybackSafe();
+        if (validReadings >= 2) {
+          bool isPlaying = (mp3 && mp3->isRunning());
+          
+          if (!isPlaying && fileCache.size() > 0) {
+            if (isTimeActive()) {
+              addLog("Датчик: " + String(measure.RangeMilliMeter / 10) + " см");
+              triggerPlaybackSafe();
+            }
           }
+          validReadings = 0; 
         }
+      } else {
+        validReadings = 0; 
       }
+    } else {
+      validReadings = 0;
     }
   }
 }
